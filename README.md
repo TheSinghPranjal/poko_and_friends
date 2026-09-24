@@ -1,17 +1,38 @@
-# poko_and_friends
+# Poko & Friends
 
-A new Flutter project.
+Tiny Think – Poko & Friends by Klay Kandy. A sibling of [bao_and_friends](https://github.com/TheSinghPranjal/bao_and_friends) with the same screens, stores, and activity video state machines.
 
-## Getting Started
+Poko (Bao’s little sister, ages 0–2) is the unlocked playable lead. Bao, Po, Koko, Momo, and Dodo stay on the family carousel as coming soon. Activity clips, bedroom backgrounds, and images are still the shared `bao_*` files until Poko-specific media exists.
 
-This project is a starting point for a Flutter application.
+## Run locally
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+cd ~/StudioProjects/poko_and_friends
+flutter pub get
+flutter run
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Pull this repo into an existing checkout with:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+cd ~/StudioProjects/poko_and_friends
+git fetch origin
+git checkout main
+git pull origin main
+flutter pub get
+```
+
+## Identity
+
+| | Value |
+| --- | --- |
+| Package | `poko_and_friends` |
+| Android applicationId | `com.lazy_bear_club.poko_and_friends` |
+| iOS / macOS bundle id | `com.lazybearclub.pokoAndFriends` |
+| Display name | Poko & Friends |
+
+## Firebase
+
+`lib/firebase_options.dart`, `android/app/google-services.json`, and `ios/Runner/GoogleService-Info.plist` are placeholders. The app boots without a live Firebase project because force-update init is wrapped in try/catch. Replace them with a real Poko Firebase app before store release. Steps are in the comment at the top of `lib/firebase_options.dart`.
+
+Release signing still expects `android/key.properties` (gitignored), same as Bao.
