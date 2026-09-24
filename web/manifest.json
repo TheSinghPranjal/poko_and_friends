@@ -1,6 +1,6 @@
 {
-    "name": "poko_and_friends",
-    "short_name": "poko_and_friends",
+    "name": "Poko & Friends",
+    "short_name": "Poko & Friends",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
