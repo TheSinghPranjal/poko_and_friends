@@ -1,0 +1,18 @@
+{
+  "name": "poko_and_friends (Flutter)",
+  "user": "ubuntu",
+  "chromeExecutablePath": "/usr/bin/google-chrome-stable",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "flutter-web",
+      "command": "export PATH=\"$HOME/flutter/bin:$PATH\" && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"
+    }
+  ],
+  "ports": [
+    {
+      "name": "Flutter web app",
+      "port": 8080
+    }
+  ]
+}
