@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
 import '../../services/stars_store.dart';
@@ -26,8 +27,7 @@ class BathScreen extends StatefulWidget {
   State<BathScreen> createState() => _BathScreenState();
 }
 
-class _BathScreenState extends State<BathScreen>
-    with TickerProviderStateMixin {
+class _BathScreenState extends State<BathScreen> with TickerProviderStateMixin {
   static const _idleVideoAsset =
       'assets/videos/chore/bath/bao_not_taking_a_bath_video.mp4';
   static const _bathingVideoAsset =
@@ -56,10 +56,7 @@ class _BathScreenState extends State<BathScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
     unawaited(_loadDue());
   }
@@ -205,6 +202,7 @@ class _BathScreenState extends State<BathScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -217,6 +215,7 @@ class _BathScreenState extends State<BathScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -230,7 +229,6 @@ class _BathScreenState extends State<BathScreen>
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -291,8 +289,9 @@ class _BathScreenState extends State<BathScreen>
               const SizedBox(height: 8),
               Text(
                 'Bath time',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -300,8 +299,7 @@ class _BathScreenState extends State<BathScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob =
-                            math.sin(_float.value * math.pi * 2) * 12;
+                        final bob = math.sin(_float.value * math.pi * 2) * 12;
                         final x = constraints.maxWidth / 2 - _bubbleSize / 2;
                         final due = _dueCount > 0;
                         return Stack(
@@ -339,10 +337,7 @@ class _BathScreenState extends State<BathScreen>
 }
 
 class _BathVideoLayer extends StatelessWidget {
-  const _BathVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _BathVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -361,10 +356,7 @@ class _BathVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );
@@ -429,8 +421,9 @@ class BathBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: TTColors.bathWarm
-                        .withValues(alpha: highlighted ? 0.5 : 0.28),
+                    color: TTColors.bathWarm.withValues(
+                      alpha: highlighted ? 0.5 : 0.28,
+                    ),
                     blurRadius: highlighted ? 18 : 14,
                     offset: const Offset(0, 6),
                   ),

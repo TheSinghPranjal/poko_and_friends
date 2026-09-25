@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
@@ -50,10 +51,7 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
   }
 
@@ -80,8 +78,8 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
         if (v == null || !_biteInProgress || !v.value.isInitialized) return;
         final duration = v.value.duration;
         if (duration <= Duration.zero) return;
-        final nearEnd = v.value.position >=
-            duration - const Duration(milliseconds: 80);
+        final nearEnd =
+            v.value.position >= duration - const Duration(milliseconds: 80);
         if (nearEnd && !v.value.isPlaying) {
           unawaited(_finishBite());
         }
@@ -171,6 +169,7 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -183,6 +182,7 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -219,10 +219,7 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
               ),
             ),
           ),
-          _VeggiesVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _VeggiesVideoLayer(controller: _idleVideo, ready: _idleReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -261,8 +258,9 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
               const SizedBox(height: 8),
               Text(
                 'Veggies with Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -271,19 +269,25 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Stack(
-                          children: List.generate(EatVeggiesRules.maxVeggies,
-                              (i) {
-                            final angle = (i / EatVeggiesRules.maxVeggies) *
+                          children: List.generate(EatVeggiesRules.maxVeggies, (
+                            i,
+                          ) {
+                            final angle =
+                                (i / EatVeggiesRules.maxVeggies) *
                                     math.pi *
                                     1.2 -
                                 0.3;
-                            final bob = math.sin(
-                                    (_float.value + i * 0.25) * math.pi * 2) *
+                            final bob =
+                                math.sin(
+                                  (_float.value + i * 0.25) * math.pi * 2,
+                                ) *
                                 10;
-                            final x = constraints.maxWidth * 0.5 +
+                            final x =
+                                constraints.maxWidth * 0.5 +
                                 math.cos(angle) * constraints.maxWidth * 0.32 -
                                 (bubbleSize / 2);
-                            final y = constraints.maxHeight * 0.12 +
+                            final y =
+                                constraints.maxHeight * 0.12 +
                                 math.sin(angle) * 50 +
                                 bob;
                             final done = _eaten.contains(i);
@@ -318,10 +322,7 @@ class _EatVeggiesScreenState extends State<EatVeggiesScreen>
 }
 
 class _VeggiesVideoLayer extends StatelessWidget {
-  const _VeggiesVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _VeggiesVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -340,10 +341,7 @@ class _VeggiesVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );

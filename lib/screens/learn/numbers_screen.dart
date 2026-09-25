@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/learn_topics.dart';
 import '../../models/rewards.dart';
 import '../../services/stars_store.dart';
@@ -153,6 +154,7 @@ class _NumbersScreenState extends State<NumbersScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -165,6 +167,7 @@ class _NumbersScreenState extends State<NumbersScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -244,8 +247,9 @@ class _NumbersScreenState extends State<NumbersScreen>
               const SizedBox(height: 8),
               Text(
                 'Numbers!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -281,10 +285,7 @@ class _NumbersScreenState extends State<NumbersScreen>
 }
 
 class _NumbersVideoLayer extends StatelessWidget {
-  const _NumbersVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _NumbersVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -303,10 +304,7 @@ class _NumbersVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );
@@ -314,10 +312,7 @@ class _NumbersVideoLayer extends StatelessWidget {
 }
 
 class _NumbersNextBubble extends StatelessWidget {
-  const _NumbersNextBubble({
-    required this.label,
-    this.playing = false,
-  });
+  const _NumbersNextBubble({required this.label, this.playing = false});
 
   final String label;
   final bool playing;

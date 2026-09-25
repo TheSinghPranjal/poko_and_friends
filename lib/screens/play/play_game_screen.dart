@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/character_bg_videos.dart';
+import '../../models/character_media.dart';
 import '../../models/play_games.dart';
 import '../../models/rewards.dart';
 import '../../services/play_due_store.dart';
@@ -34,6 +35,8 @@ class _PlayGameScreenState extends State<PlayGameScreen>
   static const _crossfadeDuration = Duration(milliseconds: 550);
 
   late final PlayGameSpec _game;
+  late PlayGameSpec _media;
+  bool _started = false;
   late final AnimationController _float;
   late final AnimationController _crossfade;
   late final AnimationController _entrance;
@@ -59,10 +62,7 @@ class _PlayGameScreenState extends State<PlayGameScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     _entrance = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 520),
@@ -75,6 +75,14 @@ class _PlayGameScreenState extends State<PlayGameScreen>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    _media = PlayGames.resolve(_game, CharacterMedia.idOf(context));
     unawaited(_initVideos());
     unawaited(_refreshMeta());
   }
@@ -101,12 +109,17 @@ class _PlayGameScreenState extends State<PlayGameScreen>
   }
 
   Future<void> _initVideos() async {
-    final idleAsset = _game.idleVideoAsset ?? _fallbackIdleVideoAsset;
+    final idleAsset =
+        _media.idleVideoAsset ??
+        CharacterMedia.clip(
+          CharacterMedia.idOf(context),
+          _fallbackIdleVideoAsset,
+        );
     final idle = VideoPlayerController.asset(idleAsset);
 
     VideoPlayerController? action;
-    if (_game.hasVideos) {
-      action = VideoPlayerController.asset(_game.actionVideoAsset!);
+    if (_media.hasVideos) {
+      action = VideoPlayerController.asset(_media.actionVideoAsset!);
     }
 
     try {
@@ -221,7 +234,7 @@ class _PlayGameScreenState extends State<PlayGameScreen>
 
     _spawnBurst();
 
-    if (_game.hasVideos) {
+    if (_media.hasVideos) {
       await _playActionAnimation();
     } else {
       setState(() => _actionInProgress = true);
@@ -252,6 +265,7 @@ class _PlayGameScreenState extends State<PlayGameScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -264,6 +278,7 @@ class _PlayGameScreenState extends State<PlayGameScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -301,11 +316,8 @@ class _PlayGameScreenState extends State<PlayGameScreen>
               ),
             ),
           ),
-          _PlayGameVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
-          if (_game.hasVideos)
+          _PlayGameVideoLayer(controller: _idleVideo, ready: _idleReady),
+          if (_media.hasVideos)
             AnimatedBuilder(
               animation: _crossfade,
               builder: (context, child) {
@@ -360,15 +372,16 @@ class _PlayGameScreenState extends State<PlayGameScreen>
               FadeTransition(
                 opacity: _entrance,
                 child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, -0.15),
-                    end: Offset.zero,
-                  ).animate(
-                    CurvedAnimation(
-                      parent: _entrance,
-                      curve: Curves.easeOutCubic,
-                    ),
-                  ),
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(0, -0.15),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: _entrance,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -382,16 +395,13 @@ class _PlayGameScreenState extends State<PlayGameScreen>
                           border: Border.all(color: Colors.white, width: 2),
                           boxShadow: TTShadows.soft,
                         ),
-                        child: Icon(
-                          _game.icon,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+                        child: Icon(_game.icon, color: Colors.white, size: 20),
                       ),
                       Text(
                         '${_game.label} with Poko!',
-                        style: TTTypography.headline(color: TTColors.darkBrown)
-                            .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                        style: TTTypography.headline(
+                          color: TTColors.darkBrown,
+                        ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
                       ),
                     ],
                   ),
@@ -414,8 +424,7 @@ class _PlayGameScreenState extends State<PlayGameScreen>
                           builder: (context, constraints) {
                             final bob =
                                 math.sin(_float.value * math.pi * 2) * 12;
-                            final x =
-                                constraints.maxWidth / 2 - bubbleSize / 2;
+                            final x = constraints.maxWidth / 2 - bubbleSize / 2;
                             final liftT = ((bob + 12) / 24).clamp(0.0, 1.0);
                             return Stack(
                               alignment: Alignment.bottomCenter,
@@ -423,8 +432,7 @@ class _PlayGameScreenState extends State<PlayGameScreen>
                                 Positioned(
                                   bottom: 40,
                                   child: Container(
-                                    width: bubbleSize *
-                                        (0.75 - liftT * 0.18),
+                                    width: bubbleSize * (0.75 - liftT * 0.18),
                                     height: 16 - liftT * 6,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
@@ -471,9 +479,13 @@ class _PlayGameScreenState extends State<PlayGameScreen>
                                   bottom: 8,
                                   child: AnimatedOpacity(
                                     duration: const Duration(milliseconds: 250),
-                                    opacity: _actionInProgress ? 0.0 : 0.65 +
-                                        math.sin(_float.value * math.pi * 2) *
-                                            0.2,
+                                    opacity: _actionInProgress
+                                        ? 0.0
+                                        : 0.65 +
+                                              math.sin(
+                                                    _float.value * math.pi * 2,
+                                                  ) *
+                                                  0.2,
                                     child: Text(
                                       due
                                           ? 'Tap Poko — it\'s ${_game.label.toLowerCase()} time!'
@@ -572,10 +584,7 @@ class _BurstParticle {
 }
 
 class _PlayGameVideoLayer extends StatelessWidget {
-  const _PlayGameVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _PlayGameVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -594,10 +603,7 @@ class _PlayGameVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );

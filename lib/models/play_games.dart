@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'character.dart';
+import 'character_media.dart';
+
 /// One playable game under the Play activity screen.
 class PlayGameSpec {
   const PlayGameSpec({
@@ -22,8 +25,7 @@ class PlayGameSpec {
   /// Plays once per bubble tap; e.g. bao_playing_football_video.mp4
   final String? actionVideoAsset;
 
-  bool get hasVideos =>
-      idleVideoAsset != null && actionVideoAsset != null;
+  bool get hasVideos => idleVideoAsset != null && actionVideoAsset != null;
 }
 
 /// All games shown in the Play tray (matches former Play hub list).
@@ -82,20 +84,16 @@ abstract final class PlayGames {
       label: 'Dance',
       icon: Icons.nightlife_rounded,
       accent: Color(0xFFF48FB1),
-      idleVideoAsset:
-          'assets/videos/play/dance/bao_not_doing_dance_video.mp4',
-      actionVideoAsset:
-          'assets/videos/play/dance/bao_doing_dance_video.mp4',
+      idleVideoAsset: 'assets/videos/play/dance/bao_not_doing_dance_video.mp4',
+      actionVideoAsset: 'assets/videos/play/dance/bao_doing_dance_video.mp4',
     ),
     PlayGameSpec(
       id: 'yoga',
       label: 'Yoga',
       icon: Icons.self_improvement_rounded,
       accent: Color(0xFFA5D6A7),
-      idleVideoAsset:
-          'assets/videos/play/yoga/bao_not_doing_yoga_video.mp4',
-      actionVideoAsset:
-          'assets/videos/play/yoga/bao_doing_yoga_video.mp4',
+      idleVideoAsset: 'assets/videos/play/yoga/bao_not_doing_yoga_video.mp4',
+      actionVideoAsset: 'assets/videos/play/yoga/bao_doing_yoga_video.mp4',
     ),
     PlayGameSpec(
       id: 'coloring',
@@ -128,5 +126,32 @@ abstract final class PlayGames {
       if (game.id == id) return game;
     }
     return null;
+  }
+
+  /// Same tray item, with Poko clips swapped in where a match exists.
+  /// Badminton has no Bao videos; Poko fills that empty idle/action pair.
+  static PlayGameSpec resolve(PlayGameSpec game, CharacterId id) {
+    if (id == CharacterId.poko && game.id == 'badminton') {
+      return PlayGameSpec(
+        id: game.id,
+        label: game.label,
+        icon: game.icon,
+        accent: game.accent,
+        idleVideoAsset: CharacterMedia.badmintonIdle,
+        actionVideoAsset: CharacterMedia.badmintonAction,
+      );
+    }
+    return PlayGameSpec(
+      id: game.id,
+      label: game.label,
+      icon: game.icon,
+      accent: game.accent,
+      idleVideoAsset: game.idleVideoAsset == null
+          ? null
+          : CharacterMedia.clip(id, game.idleVideoAsset!),
+      actionVideoAsset: game.actionVideoAsset == null
+          ? null
+          : CharacterMedia.clip(id, game.actionVideoAsset!),
+    );
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/feed_foods.dart';
 import '../../models/rewards.dart';
 import '../../services/feed_due_store.dart';
@@ -33,7 +34,8 @@ class _EatFoodScreenState extends State<EatFoodScreen>
   static const _crossfadeDuration = Duration(milliseconds: 550);
   static const _bubbleSize = 96.0;
 
-  late final FeedFoodSpec _food;
+  late FeedFoodSpec _food;
+  bool _started = false;
   late final AnimationController _float;
   late final AnimationController _crossfade;
   bool _actionInProgress = false;
@@ -49,15 +51,19 @@ class _EatFoodScreenState extends State<EatFoodScreen>
   @override
   void initState() {
     super.initState();
-    _food = FeedFoods.byId(widget.foodId) ?? FeedFoods.all.first;
     _float = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    _food = FeedFoods.resolve(widget.foodId, CharacterMedia.idOf(context));
     unawaited(_initVideos());
     unawaited(_refreshMeta());
   }
@@ -192,6 +198,7 @@ class _EatFoodScreenState extends State<EatFoodScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -204,6 +211,7 @@ class _EatFoodScreenState extends State<EatFoodScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -249,7 +257,10 @@ class _EatFoodScreenState extends State<EatFoodScreen>
                 child: child,
               );
             },
-            child: _FeedVideoLayer(controller: _actionVideo, ready: _actionReady),
+            child: _FeedVideoLayer(
+              controller: _actionVideo,
+              ready: _actionReady,
+            ),
           ),
           IgnorePointer(
             child: DecoratedBox(
@@ -276,8 +287,9 @@ class _EatFoodScreenState extends State<EatFoodScreen>
               const SizedBox(height: 8),
               Text(
                 '${_food.label} with Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -285,8 +297,7 @@ class _EatFoodScreenState extends State<EatFoodScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob =
-                            math.sin(_float.value * math.pi * 2) * 12;
+                        final bob = math.sin(_float.value * math.pi * 2) * 12;
                         final x = constraints.maxWidth / 2 - _bubbleSize / 2;
                         return Stack(
                           children: [
@@ -294,8 +305,9 @@ class _EatFoodScreenState extends State<EatFoodScreen>
                               left: x,
                               bottom: 48 + bob,
                               child: BounceButton(
-                                onPressed:
-                                    !_actionInProgress ? _tapBubble : null,
+                                onPressed: !_actionInProgress
+                                    ? _tapBubble
+                                    : null,
                                 enabled: !_actionInProgress,
                                 semanticLabel: _food.label,
                                 child: _FoodBubble(
@@ -323,10 +335,7 @@ class _EatFoodScreenState extends State<EatFoodScreen>
 }
 
 class _FeedVideoLayer extends StatelessWidget {
-  const _FeedVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _FeedVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -345,10 +354,7 @@ class _FeedVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );

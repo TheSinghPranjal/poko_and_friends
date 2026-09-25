@@ -30,7 +30,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
     ),
     (
       'Meet the Family',
-      'Poko, Poko, and more friends are waiting to play.',
+      'Poko, Bao, and more friends are waiting to play.',
       Icons.family_restroom_rounded,
     ),
     (

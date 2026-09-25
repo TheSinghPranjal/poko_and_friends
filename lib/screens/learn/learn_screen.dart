@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/character_bg_videos.dart';
+import '../../models/character_media.dart';
 import '../../models/learn_topics.dart';
 import '../../theme/tt_colors.dart';
 import '../../widgets/back_button_circle.dart';
@@ -21,21 +22,28 @@ class LearnScreen extends StatefulWidget {
 }
 
 class _LearnScreenState extends State<LearnScreen> {
-  static const _idleVideoAsset = CharacterBgVideos.fallback;
+  static const _baoIdleVideoAsset = CharacterBgVideos.fallback;
 
   final Set<String> _done = {};
   VideoPlayerController? _idleVideo;
   bool _idleReady = false;
   bool _disposed = false;
+  bool _videoStarted = false;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_videoStarted) return;
+    _videoStarted = true;
     unawaited(_initVideo());
   }
 
   Future<void> _initVideo() async {
-    final idle = VideoPlayerController.asset(_idleVideoAsset);
+    final asset = CharacterMedia.clip(
+      CharacterMedia.idOf(context),
+      _baoIdleVideoAsset,
+    );
+    final idle = VideoPlayerController.asset(asset);
     try {
       await idle.initialize();
       if (!mounted || _disposed) {
@@ -75,7 +83,9 @@ class _LearnScreenState extends State<LearnScreen> {
 
   Future<void> _tapTopic(LearnTopicSpec topic) async {
     if (topic.hasActivity) {
-      final completed = await context.push<bool>(topic.route!);
+      final completed = await context.push<bool>(
+        CharacterMedia.withCharacter(context, topic.route!),
+      );
       if (!mounted) return;
       if (completed == true) {
         setState(() => _done.add(topic.id));
@@ -100,18 +110,11 @@ class _LearnScreenState extends State<LearnScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFE3F2FD),
-                  TTColors.skySoft,
-                  TTColors.skyBlue,
-                ],
+                colors: [Color(0xFFE3F2FD), TTColors.skySoft, TTColors.skyBlue],
               ),
             ),
           ),
-          _LearnVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _LearnVideoLayer(controller: _idleVideo, ready: _idleReady),
           IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -137,9 +140,7 @@ class _LearnScreenState extends State<LearnScreen> {
               const SizedBox(height: 8),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
-                child: RotatingHeadline(
-                  phrases: LearnHeadlinePhrases.all,
-                ),
+                child: RotatingHeadline(phrases: LearnHeadlinePhrases.all),
               ),
               const Spacer(),
               ItemTrayBar(
@@ -163,10 +164,7 @@ class _LearnScreenState extends State<LearnScreen> {
 }
 
 class _LearnVideoLayer extends StatelessWidget {
-  const _LearnVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _LearnVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -186,10 +184,7 @@ class _LearnVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(c),
-            c,
-          ),
+          child: VideoPlayer(key: ValueKey(c), c),
         ),
       ),
     );

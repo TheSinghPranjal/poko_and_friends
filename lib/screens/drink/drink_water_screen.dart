@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/character.dart';
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
 import '../../services/stars_store.dart';
@@ -51,10 +53,7 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
   }
 
@@ -81,8 +80,8 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
         if (v == null || !_sipInProgress || !v.value.isInitialized) return;
         final duration = v.value.duration;
         if (duration <= Duration.zero) return;
-        final nearEnd = v.value.position >=
-            duration - const Duration(milliseconds: 80);
+        final nearEnd =
+            v.value.position >= duration - const Duration(milliseconds: 80);
         if (nearEnd && !v.value.isPlaying) {
           unawaited(_finishSip());
         }
@@ -117,7 +116,7 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
   Future<void> _finishSip() async {
     if (!_sipInProgress) return;
 
-    // Keep Poko drinking on screen while the full-reward celebration plays.
+    // Keep Bao drinking on screen while the full-reward celebration plays.
     if (_celebrating) {
       final drinking = _drinkingVideo;
       if (drinking != null && drinking.value.isInitialized) {
@@ -175,6 +174,7 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -187,6 +187,7 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -225,10 +226,7 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
               ),
             ),
           ),
-          _DrinkVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _DrinkVideoLayer(controller: _idleVideo, ready: _idleReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -268,8 +266,9 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
               const SizedBox(height: 8),
               Text(
                 'Sip with Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -278,38 +277,44 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Stack(
-                          children: List.generate(DrinkWaterRules.maxGlasses,
-                                  (i) {
-                                final angle = (i / DrinkWaterRules.maxGlasses) *
+                          children: List.generate(DrinkWaterRules.maxGlasses, (
+                            i,
+                          ) {
+                            final angle =
+                                (i / DrinkWaterRules.maxGlasses) *
                                     math.pi *
                                     1.2 -
-                                    0.3;
-                                final bob = math.sin(
-                                    (_float.value + i * 0.25) * math.pi * 2) *
-                                    10;
-                                final x = constraints.maxWidth * 0.5 +
-                                    math.cos(angle) * constraints.maxWidth * 0.32 -
-                                    (bubbleSize / 2);
-                                final y = constraints.maxHeight * 0.12 +
-                                    math.sin(angle) * 50 +
-                                    bob;
-                                final done = _drunk.contains(i);
-                                return Positioned(
-                                  left: x,
-                                  top: y,
-                                  child: BounceButton(
-                                    onPressed: done || _sipInProgress
-                                        ? null
-                                        : () => _tapGlass(i),
-                                    enabled: !done && !_sipInProgress,
-                                    semanticLabel: 'Water glass ${i + 1}',
-                                    child: WaterGlass(
-                                      drunk: done,
-                                      playing: done && _sipInProgress,
-                                    ),
-                                  ),
-                                );
-                              }),
+                                0.3;
+                            final bob =
+                                math.sin(
+                                  (_float.value + i * 0.25) * math.pi * 2,
+                                ) *
+                                10;
+                            final x =
+                                constraints.maxWidth * 0.5 +
+                                math.cos(angle) * constraints.maxWidth * 0.32 -
+                                (bubbleSize / 2);
+                            final y =
+                                constraints.maxHeight * 0.12 +
+                                math.sin(angle) * 50 +
+                                bob;
+                            final done = _drunk.contains(i);
+                            return Positioned(
+                              left: x,
+                              top: y,
+                              child: BounceButton(
+                                onPressed: done || _sipInProgress
+                                    ? null
+                                    : () => _tapGlass(i),
+                                enabled: !done && !_sipInProgress,
+                                semanticLabel: 'Water glass ${i + 1}',
+                                child: WaterGlass(
+                                  drunk: done,
+                                  playing: done && _sipInProgress,
+                                ),
+                              ),
+                            );
+                          }),
                         );
                       },
                     );
@@ -325,10 +330,7 @@ class _DrinkWaterScreenState extends State<DrinkWaterScreen>
 }
 
 class _DrinkVideoLayer extends StatelessWidget {
-  const _DrinkVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _DrinkVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -389,15 +391,15 @@ class WaterGlass extends StatelessWidget {
                   radius: 1.0,
                   colors: drunk
                       ? [
-                    Colors.white.withValues(alpha: 0.55),
-                    TTColors.waterBlue.withValues(alpha: 0.30),
-                    TTColors.waterBlue.withValues(alpha: 0.50),
-                  ]
+                          Colors.white.withValues(alpha: 0.55),
+                          TTColors.waterBlue.withValues(alpha: 0.30),
+                          TTColors.waterBlue.withValues(alpha: 0.50),
+                        ]
                       : [
-                    Colors.white.withValues(alpha: 0.80),
-                    TTColors.waterBlue.withValues(alpha: 0.18),
-                    TTColors.waterBlue.withValues(alpha: 0.32),
-                  ],
+                          Colors.white.withValues(alpha: 0.80),
+                          TTColors.waterBlue.withValues(alpha: 0.18),
+                          TTColors.waterBlue.withValues(alpha: 0.32),
+                        ],
                   stops: const [0.0, 0.55, 1.0],
                 ),
                 border: Border.all(
@@ -488,10 +490,14 @@ class RewardPopup extends StatelessWidget {
     super.key,
     required this.reward,
     required this.onContinue,
+    this.character = CharacterId.poko,
   });
 
   final RewardResult reward;
   final VoidCallback onContinue;
+
+  /// Poko cheers with her celebration clip. Bao keeps the celebrate still.
+  final CharacterId character;
 
   static const _cardCream = Color(0xFFFFF8F0);
   static const _cardBorder = Color(0xFFE8D5B5);
@@ -550,10 +556,10 @@ class RewardPopup extends StatelessWidget {
                         'Wonderful!',
                         style: TTTypography.headline(color: _titleBrown)
                             .copyWith(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 32,
-                          letterSpacing: 0.2,
-                        ),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 32,
+                              letterSpacing: 0.2,
+                            ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -575,10 +581,7 @@ class RewardPopup extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: _starPillFill,
                           borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                            color: _starPillBorder,
-                            width: 2,
-                          ),
+                          border: Border.all(color: _starPillBorder, width: 2),
                           boxShadow: [
                             BoxShadow(
                               color: _starPillBorder.withValues(alpha: 0.22),
@@ -600,9 +603,9 @@ class RewardPopup extends StatelessWidget {
                               '+$stars',
                               style: TTTypography.title(color: _titleBrown)
                                   .copyWith(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 28,
-                              ),
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 28,
+                                  ),
                             ),
                           ],
                         ),
@@ -611,11 +614,9 @@ class RewardPopup extends StatelessWidget {
                       Text(
                         'Stars burst – you shine bright!',
                         textAlign: TextAlign.center,
-                        style: TTTypography.caption(color: _captionBrown)
-                            .copyWith(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TTTypography.caption(
+                          color: _captionBrown,
+                        ).copyWith(fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 20),
                       // 3D Yay button
@@ -655,9 +656,9 @@ class RewardPopup extends StatelessWidget {
                             'Yay!',
                             style: TTTypography.button(color: _titleBrown)
                                 .copyWith(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 24,
-                            ),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 24,
+                                ),
                           ),
                         ),
                       ),
@@ -730,14 +731,7 @@ class RewardPopup extends StatelessWidget {
                         size: 12,
                       ),
                     ),
-                    // Poko character
-                    Image.asset(
-                      'assets/images/bao_reward_celebrate.png',
-                      width: 168,
-                      height: 140,
-                      fit: BoxFit.contain,
-                      filterQuality: FilterQuality.high,
-                    ),
+                    _RewardPortrait(character: character),
                   ],
                 ),
               ),
@@ -861,6 +855,95 @@ class DrinkWaterReminderPopup extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Reward portrait. Poko loops her celebration clip; Bao keeps the still.
+class _RewardPortrait extends StatefulWidget {
+  const _RewardPortrait({required this.character});
+
+  final CharacterId character;
+
+  @override
+  State<_RewardPortrait> createState() => _RewardPortraitState();
+}
+
+class _RewardPortraitState extends State<_RewardPortrait> {
+  static const _baoStill = 'assets/images/bao_reward_celebrate.png';
+
+  VideoPlayerController? _video;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final asset = CharacterMedia.celebrationVideo(widget.character);
+    if (asset != null) unawaited(_load(asset));
+  }
+
+  Future<void> _load(String asset) async {
+    final controller = VideoPlayerController.asset(asset);
+    try {
+      await controller.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+      await controller.play();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _video = controller;
+        _ready = true;
+      });
+    } catch (_) {
+      await controller.dispose();
+    }
+  }
+
+  @override
+  void dispose() {
+    _video?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final video = _video;
+    if (video != null && _ready && video.value.isInitialized) {
+      final size = video.value.size;
+      return SizedBox(
+        width: 112,
+        height: 148,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: SizedBox(
+              width: size.width,
+              height: size.height,
+              child: VideoPlayer(video),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (widget.character == CharacterId.poko) {
+      return const SizedBox(width: 112, height: 148);
+    }
+
+    return Image.asset(
+      _baoStill,
+      width: 168,
+      height: 140,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
     );
   }
 }

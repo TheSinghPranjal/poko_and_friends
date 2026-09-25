@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
 import '../../services/stars_store.dart';
@@ -82,10 +83,7 @@ class _WearShoesScreenState extends State<WearShoesScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
     unawaited(_loadDue());
   }
@@ -244,12 +242,13 @@ class _WearShoesScreenState extends State<WearShoesScreen>
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
     await StarsStore.add(reward.stars);
-      await _showReward(reward);
+    await _showReward(reward);
     if (!mounted) return;
     context.pop(true);
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -262,6 +261,7 @@ class _WearShoesScreenState extends State<WearShoesScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -370,7 +370,8 @@ class _WearShoesScreenState extends State<WearShoesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final overlayVisible = _phase == _ShoePhase.wearing ||
+    final overlayVisible =
+        _phase == _ShoePhase.wearing ||
         _phase == _ShoePhase.wearingEnding ||
         _phase == _ShoePhase.takingBag ||
         _phase == _ShoePhase.done;
@@ -393,10 +394,7 @@ class _WearShoesScreenState extends State<WearShoesScreen>
               ),
             ),
           ),
-          _ShoeVideoLayer(
-            controller: _baseController,
-            ready: _baseReady,
-          ),
+          _ShoeVideoLayer(controller: _baseController, ready: _baseReady),
           if (overlayVisible)
             AnimatedBuilder(
               animation: _crossfade,
@@ -436,8 +434,9 @@ class _WearShoesScreenState extends State<WearShoesScreen>
               const SizedBox(height: 8),
               Text(
                 'Wear Shoes!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -445,8 +444,7 @@ class _WearShoesScreenState extends State<WearShoesScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob =
-                            math.sin(_float.value * math.pi * 2) * 10;
+                        final bob = math.sin(_float.value * math.pi * 2) * 10;
                         final centerX =
                             constraints.maxWidth / 2 - _bubbleSize / 2;
                         final leftX =
@@ -475,10 +473,12 @@ class _WearShoesScreenState extends State<WearShoesScreen>
                                   cream: TTColors.shoeCream,
                                   warm: TTColors.shoeWarm,
                                   done: _shoeCompleted,
-                                  playing: _phase == _ShoePhase.wearing ||
+                                  playing:
+                                      _phase == _ShoePhase.wearing ||
                                       _phase == _ShoePhase.wearingEnding,
                                   highlighted:
-                                      _dueCount > 0 && _phase == _ShoePhase.idle,
+                                      _dueCount > 0 &&
+                                      _phase == _ShoePhase.idle,
                                   badgeCount: _phase == _ShoePhase.idle
                                       ? _dueCount
                                       : 0,
@@ -492,8 +492,8 @@ class _WearShoesScreenState extends State<WearShoesScreen>
                                 child: BounceButton(
                                   onPressed:
                                       _phase == _ShoePhase.waitBag && !_busy
-                                          ? _tapBag
-                                          : null,
+                                      ? _tapBag
+                                      : null,
                                   enabled:
                                       _phase == _ShoePhase.waitBag && !_busy,
                                   semanticLabel: 'Bag',
@@ -524,10 +524,7 @@ class _WearShoesScreenState extends State<WearShoesScreen>
 }
 
 class _ShoeVideoLayer extends StatelessWidget {
-  const _ShoeVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _ShoeVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -546,10 +543,7 @@ class _ShoeVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );

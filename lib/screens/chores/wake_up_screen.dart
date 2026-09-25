@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/stars_store.dart';
 import '../../services/sleep_store.dart';
@@ -15,8 +16,8 @@ import '../../widgets/bounce_button.dart';
 import '../../widgets/status_bar.dart';
 import '../drink/drink_water_screen.dart' show RewardPopup;
 
-/// Wake Up Activity — Poko is sleeping; tap the floating Wake Up bubble.
-/// Sleeping video → waking video. Marks Poko awake for the next 1 hour.
+/// Wake Up Activity — Bao is sleeping; tap the floating Wake Up bubble.
+/// Sleeping video → waking video. Marks Bao awake for the next 1 hour.
 class WakeUpScreen extends StatefulWidget {
   const WakeUpScreen({super.key});
 
@@ -26,11 +27,12 @@ class WakeUpScreen extends StatefulWidget {
 
 class _WakeUpScreenState extends State<WakeUpScreen>
     with TickerProviderStateMixin {
-  static const _sleepingVideoAsset =
+  static const _baoSleepingVideoAsset =
       'assets/videos/wake/bao_sleeping_video.mp4';
-  static const _wakingVideoAsset =
+  static const _baoWakingVideoAsset =
       'assets/videos/wake/bao_waking_up_video.mp4';
   static const _crossfadeDuration = Duration(milliseconds: 550);
+  bool _videosStarted = false;
 
   late final AnimationController _float;
   late final AnimationController _crossfade;
@@ -51,16 +53,25 @@ class _WakeUpScreenState extends State<WakeUpScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_videosStarted) return;
+    _videosStarted = true;
     unawaited(_initVideos());
   }
 
   Future<void> _initVideos() async {
-    final sleeping = VideoPlayerController.asset(_sleepingVideoAsset);
-    final waking = VideoPlayerController.asset(_wakingVideoAsset);
+    final character = CharacterMedia.idOf(context);
+    final sleeping = VideoPlayerController.asset(
+      CharacterMedia.clip(character, _baoSleepingVideoAsset),
+    );
+    final waking = VideoPlayerController.asset(
+      CharacterMedia.clip(character, _baoWakingVideoAsset),
+    );
 
     try {
       await Future.wait([sleeping.initialize(), waking.initialize()]);
@@ -81,8 +92,8 @@ class _WakeUpScreenState extends State<WakeUpScreen>
         if (v == null || !_waking || !v.value.isInitialized) return;
         final duration = v.value.duration;
         if (duration <= Duration.zero) return;
-        final nearEnd = v.value.position >=
-            duration - const Duration(milliseconds: 80);
+        final nearEnd =
+            v.value.position >= duration - const Duration(milliseconds: 80);
         if (nearEnd && !v.value.isPlaying) {
           unawaited(_finishWake());
         }
@@ -135,7 +146,7 @@ class _WakeUpScreenState extends State<WakeUpScreen>
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
     await StarsStore.add(reward.stars);
-      await _showReward(reward);
+    await _showReward(reward);
     if (!mounted) return;
     context.pop(true);
   }
@@ -159,6 +170,7 @@ class _WakeUpScreenState extends State<WakeUpScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -171,6 +183,7 @@ class _WakeUpScreenState extends State<WakeUpScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -207,10 +220,7 @@ class _WakeUpScreenState extends State<WakeUpScreen>
               ),
             ),
           ),
-          _WakeVideoLayer(
-            controller: _sleepingVideo,
-            ready: _sleepingReady,
-          ),
+          _WakeVideoLayer(controller: _sleepingVideo, ready: _sleepingReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -249,8 +259,9 @@ class _WakeUpScreenState extends State<WakeUpScreen>
               const SizedBox(height: 8),
               Text(
                 _waking ? 'Good morning Poko!' : 'Poko is sleeping',
-                style: TTTypography.headline(color: TTColors.creamWhite)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.creamWhite,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -258,8 +269,7 @@ class _WakeUpScreenState extends State<WakeUpScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob =
-                            math.sin(_float.value * math.pi * 2) * 12;
+                        final bob = math.sin(_float.value * math.pi * 2) * 12;
                         final x = constraints.maxWidth * 0.5 - bubbleSize / 2;
                         return Stack(
                           children: [
@@ -272,9 +282,7 @@ class _WakeUpScreenState extends State<WakeUpScreen>
                                     : _tapWakeBubble,
                                 enabled: !_waking && !_celebrating,
                                 semanticLabel: 'Wake Up',
-                                child: WakeUpBubble(
-                                  active: _waking,
-                                ),
+                                child: WakeUpBubble(active: _waking),
                               ),
                             ),
                           ],
@@ -293,10 +301,7 @@ class _WakeUpScreenState extends State<WakeUpScreen>
 }
 
 class _WakeVideoLayer extends StatelessWidget {
-  const _WakeVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _WakeVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -407,11 +412,9 @@ class WakeUpBubble extends StatelessWidget {
                 ),
                 Text(
                   'Wake Up',
-                  style: TTTypography.caption(color: TTColors.darkBrown)
-                      .copyWith(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: TTTypography.caption(
+                    color: TTColors.darkBrown,
+                  ).copyWith(fontSize: 10, fontWeight: FontWeight.w800),
                 ),
               ],
             ),
