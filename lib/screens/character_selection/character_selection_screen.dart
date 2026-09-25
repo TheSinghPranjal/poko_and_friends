@@ -28,7 +28,14 @@ class _CharacterSelectionScreenState extends State<CharacterSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.72);
+    // Open on the unlocked lead (Poko) without reordering the family roster.
+    final leadIndex = familyCharacters.indexWhere((c) => c.isUnlocked);
+    final initial = leadIndex < 0 ? 0 : leadIndex;
+    _page = initial.toDouble();
+    _pageController = PageController(
+      viewportFraction: 0.72,
+      initialPage: initial,
+    );
     _pageController.addListener(() {
       setState(() => _page = _pageController.page ?? 0);
     });

@@ -24,17 +24,9 @@ class FamilyCharacter {
   bool get isUnlocked => unlockState == CharacterUnlockState.unlocked;
 }
 
-/// Family roster (same cast as Bao & Friends). Poko is the unlocked lead.
+/// Roster order matches Bao & Friends. Poko (little sister, same 0–2 band)
+/// is the unlocked lead; everyone else, including Bao, is coming soon.
 const familyCharacters = <FamilyCharacter>[
-  FamilyCharacter(
-    id: CharacterId.poko,
-    name: 'Poko',
-    subtitle: 'Baby Panda • Let\'s Sing & Draw!',
-    cardColorValue: 0xFFF5B8C8,
-    unlockState: CharacterUnlockState.unlocked,
-    ageLabel: '0–2',
-    role: 'Baby Panda',
-  ),
   FamilyCharacter(
     id: CharacterId.bao,
     name: 'Bao',
@@ -43,6 +35,15 @@ const familyCharacters = <FamilyCharacter>[
     unlockState: CharacterUnlockState.comingSoon,
     ageLabel: '0–2',
     role: 'Baby Panda',
+  ),
+  FamilyCharacter(
+    id: CharacterId.poko,
+    name: 'Poko',
+    subtitle: 'Little Sister • Let\'s Learn Together!',
+    cardColorValue: 0xFFF5B8C8,
+    unlockState: CharacterUnlockState.unlocked,
+    ageLabel: '0–2',
+    role: 'Little Sister',
   ),
   FamilyCharacter(
     id: CharacterId.po,

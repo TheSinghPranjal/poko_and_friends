@@ -1,51 +1,34 @@
-# poko_and_friends
+# Poko & Friends
 
-**Tiny Think – Poko & Friends** by Klay Kandy.
+**Tiny Think – Poko & Friends** by Klay Kandy. A sibling of [bao_and_friends](https://github.com/TheSinghPranjal/bao_and_friends).
 
-Structural and behavioral sibling of
-[`bao_and_friends`](https://github.com/TheSinghPranjal/bao_and_friends).
-Same screens, stores, and activity video state machines (idle → bubble →
-one-shot → completed idle → rewards). **Poko** is the unlocked lead playable
-character; family roster still includes Bao, Po, Koko, Momo, and Dodo.
+The Flutter tree matches Bao: models, go_router, screens, stores, theme, and the activity video state machines (idle loop, floating bubble tap, one-shot action, next idle, reward). Poko is the unlocked lead (little sister, ages 0–2). The family order is still Bao, Poko, Po, Koko, Momo, Dodo. Bao and the rest are coming soon. The carousel opens on Poko.
 
-## Media note
+Where a Poko clip exists, her screens play it (`lib/models/character_media.dart`). Bao's files stay registered and still play for Bao. Slots with no Poko clip keep Bao's media.
 
-Video/image filenames still use the `bao_*` / `Bao_*` prefixes on purpose.
-Poko currently reuses Bao media — do not rename those asset paths until
-dedicated Poko media is ready.
-
-## Open in Android Studio
+## Run locally
 
 ```bash
-git clone https://github.com/TheSinghPranjal/poko_and_friends.git ~/StudioProjects/poko_and_friends
 cd ~/StudioProjects/poko_and_friends
-flutter pub get
-flutter run
+git checkout main && git pull origin main && flutter pub get && flutter run
 ```
 
 ## Identity
 
-| | |
-|---|---|
-| Dart package | `poko_and_friends` |
-| Android applicationId | `com.lazy_bear_club.poko_and_friends` |
-| iOS bundle id | `com.lazybearclub.pokoAndFriends` |
+| | Value |
+| --- | --- |
+| Package | `poko_and_friends` |
 | Display name | Poko & Friends |
+| Android applicationId | `com.lazy_bear_club.poko_and_friends` |
+| iOS / macOS bundle id | `com.lazybearclub.pokoAndFriends` |
+| Play listing URL in force-update | `https://play.google.com/store/apps/details?id=com.lazy_bear_club.poko_and_friends` |
 
-## Firebase (human setup)
+## Firebase (left for a human)
 
-`lib/firebase_options.dart`, `android/app/google-services.json`, and
-`ios/Runner/GoogleService-Info.plist` contain **placeholders**. Create a
-Firebase project (e.g. `poko-and-friends`), register the Android/iOS apps with
-the ids above, then run:
+`lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`, and `firebase.json` are placeholders. They are not Bao's project and they are not real secrets. The app still boots: Android `Firebase.initializeApp` is inside try/catch, and force-update is skipped when init fails.
 
-```bash
-flutterfire configure
-```
-
-Do not reuse the Bao Firebase app ids in production.
-
-## Getting Started
-
-This project is a Flutter application. See the
-[Flutter docs](https://docs.flutter.dev/) for tooling help.
+1. Create a Firebase project (suggested id `poko-and-friends`).
+2. Register Android `com.lazy_bear_club.poko_and_friends` and iOS `com.lazybearclub.pokoAndFriends`.
+3. Run FlutterFire (`flutterfire configure` with those ids) or drop in the downloaded plist/json and replace `lib/firebase_options.dart`.
+4. Add Remote Config keys used by Bao: `force_update` (bool), `minimum_android_version` (string), `latest_android_version` (string).
+5. Add `android/key.properties` (gitignored) before a Play release build. The Gradle release signing block matches Bao and no-ops until that file exists.

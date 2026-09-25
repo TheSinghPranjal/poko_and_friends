@@ -11,4 +11,4 @@ PRODUCT_NAME = poko_and_friends
 PRODUCT_BUNDLE_IDENTIFIER = com.lazybearclub.pokoAndFriends
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.lazybearclub. All rights reserved.

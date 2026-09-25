@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import '../../models/activity_schedule.dart';
 import '../../models/character.dart';
 import '../../models/character_bg_videos.dart';
+import '../../models/character_media.dart';
 import '../../services/premium_store.dart';
 import '../../services/schedule_store.dart';
 import '../../services/sleep_store.dart';
@@ -20,7 +21,9 @@ import '../../widgets/bounce_button.dart';
 import '../../widgets/premium_dialogs.dart';
 import '../../widgets/status_bar.dart';
 
-/// Character Home — looping bedroom video (Poko) + frosted bottom activity sheet.
+/// Character Home — looping bedroom / time-of-day video +
+/// frosted bottom activity sheet.
+/// Poko plays poko_* clips where a match exists; Bao's files stay in place.
 class CharacterHomeScreen extends StatefulWidget {
   const CharacterHomeScreen({super.key, required this.characterId});
 
@@ -34,6 +37,9 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     with WidgetsBindingObserver {
   static const _baoSleepingVideoAsset =
       'assets/videos/wake/bao_sleeping_video.mp4';
+
+  /// Poko swaps in her own file; Bao and everyone else keep [baoAsset].
+  String _clip(String baoAsset) => CharacterMedia.clip(character.id, baoAsset);
 
   /// Order matches the design mock: Learn · Play · Feed · Chores · Drink · Wake Up
   static const _navItems = <_NavItem>[
@@ -53,14 +59,15 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
   bool _sleepLoaded = false;
   Timer? _sleepCheckTimer;
   Map<String, ActivityTimerStatus> _timerByRoute = {};
+
   /// Tracks period or special clip key so we swap when a window starts/ends.
   String? _awakeClipKey;
 
   /// Visual selection in the bottom sheet (matches mock white-circle + orange).
   String? _selectedRoute;
 
-  /// Lead playable character reuses Poko media (bao_* assets) for now.
-  bool get _isLeadPlayable => character.id == CharacterId.poko;
+  /// Poko is the unlocked lead and runs the bedroom video state machine.
+  bool get _isLead => character.id == CharacterId.poko;
 
   @override
   void initState() {
@@ -76,13 +83,10 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     unawaited(_refreshSleepState(initVideo: true));
     unawaited(_refreshTimers());
     unawaited(StarsStore.total());
-    _sleepCheckTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) {
-        unawaited(_refreshSleepState());
-        unawaited(_refreshTimers());
-      },
-    );
+    _sleepCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      unawaited(_refreshSleepState());
+      unawaited(_refreshTimers());
+    });
   }
 
   @override
@@ -98,10 +102,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     final wake = await SleepStore.wakeTimerStatus();
     if (!mounted) return;
     setState(() {
-      _timerByRoute = {
-        ...map,
-        '/wake-up': wake,
-      };
+      _timerByRoute = {...map, '/wake-up': wake};
       // Drop selection highlight unless that route is actually due (or wake while asleep).
       final selected = _selectedRoute;
       if (selected != null && selected != '/wake-up') {
@@ -119,15 +120,17 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
 
     // Special daytime clips override sleep video when active.
     final special = CharacterBgVideos.specialFor();
-    final nightAwake =
-        !sleeping && await SleepStore.inNightSleepWindow();
+    final specialName = special == null
+        ? ''
+        : _clip(special.asset).split('/').last;
+    final nightAwake = !sleeping && await SleepStore.inNightSleepWindow();
     final clipKey = special != null
         ? 'special:${special.id}'
         : sleeping
-            ? 'sleep'
-            : (nightAwake
-                ? 'night_awake_fallback'
-                : CharacterBgVideos.awakeKeyFor());
+        ? 'sleep'
+        : (nightAwake
+              ? 'night_awake_fallback'
+              : CharacterBgVideos.awakeKeyFor());
     final clipChanged = clipKey != _awakeClipKey;
 
     setState(() {
@@ -141,20 +144,18 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       }
     });
 
-    if (_isLeadPlayable &&
+    if (_isLead &&
         (initVideo ||
             sleeping != _videoShowsSleeping ||
             clipChanged ||
-            (special != null &&
-                !_currentAwakeAsset
-                    .contains(special.asset.split('/').last)))) {
+            (special != null && !_currentAwakeAsset.contains(specialName)))) {
       await _initVideo(sleeping: sleeping);
     }
   }
 
   bool get _videoShowsSleeping {
     final src = _video?.dataSource ?? '';
-    return src.contains('bao_sleeping_video');
+    return src.contains(_clip(_baoSleepingVideoAsset).split('/').last);
   }
 
   String get _currentAwakeAsset {
@@ -164,27 +165,27 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
       ...CharacterBgVideos.allPeriodAssets,
       CharacterBgVideos.fallback,
     ]) {
-      if (src.contains(asset.split('/').last)) return asset;
+      final resolved = _clip(asset);
+      if (src.contains(resolved.split('/').last)) return resolved;
     }
     return '';
   }
 
   Future<void> _initVideo({required bool sleeping}) async {
     final special = CharacterBgVideos.specialFor();
-    final nightAwake =
-        !sleeping && await SleepStore.inNightSleepWindow();
+    final nightAwake = !sleeping && await SleepStore.inNightSleepWindow();
 
     // Priority: special → sleep → night-wake fallback → period default.
     final String preferred;
     if (special != null) {
-      preferred = special.asset;
+      preferred = _clip(special.asset);
     } else if (sleeping) {
-      preferred = _baoSleepingVideoAsset;
+      preferred = _clip(_baoSleepingVideoAsset);
     } else if (nightAwake) {
-      // After a night wake (10pm–6am), show the generic bedroom clip.
-      preferred = CharacterBgVideos.fallback;
+      // After a night wake (10pm–6am), show the generic idle clip.
+      preferred = _clip(CharacterBgVideos.fallback);
     } else {
-      preferred = CharacterBgVideos.assetForNow();
+      preferred = _clip(CharacterBgVideos.assetForNow());
     }
 
     final previous = _video;
@@ -192,21 +193,23 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
     _awakeClipKey = special != null
         ? 'special:${special.id}'
         : sleeping
-            ? 'sleep'
-            : (nightAwake
-                ? 'night_awake_fallback'
-                : CharacterBgVideos.awakeKeyFor());
+        ? 'sleep'
+        : (nightAwake
+              ? 'night_awake_fallback'
+              : CharacterBgVideos.awakeKeyFor());
 
-    final alreadyCorrect = previous != null &&
+    final alreadyCorrect =
+        previous != null &&
         previous.value.isInitialized &&
         previous.dataSource.contains(preferred.split('/').last);
     if (alreadyCorrect) return;
 
     previous?.pause();
 
-    final loaded = await _tryLoadAsset(preferred) ??
+    final loaded =
+        await _tryLoadAsset(preferred) ??
         (special != null || !sleeping
-            ? await _tryLoadAsset(CharacterBgVideos.fallback)
+            ? await _tryLoadAsset(_clip(CharacterBgVideos.fallback))
             : null);
 
     if (loaded == null) return;
@@ -277,7 +280,7 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Poko is already awake! Come back in a bit.',
+              '${character.name} is already awake! Come back in a bit.',
               style: TTTypography.body(color: TTColors.creamWhite),
             ),
             backgroundColor: TTColors.darkBrown,
@@ -333,11 +336,8 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
         fit: StackFit.expand,
         children: [
           // ---- LOOPING BACKGROUND ----
-          if (_isLeadPlayable)
-            _LoopingVideoBackground(
-              controller: _video,
-              ready: _videoReady,
-            )
+          if (_isLead)
+            _LoopingVideoBackground(controller: _video, ready: _videoReady)
           else
             const _HomeBedroomBg(),
 
@@ -357,28 +357,26 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                   child: Text(
                     '${character.name} Coming Soon',
                     textAlign: TextAlign.center,
-                    style: TTTypography.headline(color: TTColors.darkBrown)
-                        .copyWith(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 30,
-                    ),
+                    style: TTTypography.headline(
+                      color: TTColors.darkBrown,
+                    ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
                   ),
                 )
-              else if (_isLeadPlayable && _sleepLoaded)
+              else if (_isLead && _sleepLoaded)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
                   child: Text(
-                    _isSleeping ? 'Poko is sleeping' : 'Hello Poko!',
+                    _isSleeping
+                        ? '${character.name} is sleeping'
+                        : 'Hello ${character.name}!',
                     textAlign: TextAlign.center,
-                    style: TTTypography.headline(color: TTColors.darkBrown)
-                        .copyWith(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 30,
-                    ),
+                    style: TTTypography.headline(
+                      color: TTColors.darkBrown,
+                    ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
                   ),
                 ),
               Expanded(
-                child: !_isLeadPlayable
+                child: !_isLead
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -388,8 +386,9 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                               height: 140,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Color(character.cardColorValue)
-                                    .withValues(alpha: 0.35),
+                                color: Color(
+                                  character.cardColorValue,
+                                ).withValues(alpha: 0.35),
                                 boxShadow: TTShadows.glow(
                                   Color(character.cardColorValue),
                                 ),
@@ -408,12 +407,13 @@ class _CharacterHomeScreenState extends State<CharacterHomeScreen>
                             const SizedBox(height: 8),
                             Text(
                               character.name,
-                              style: TTTypography.headline(
-                                color: TTColors.darkBrown,
-                              ).copyWith(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 30,
-                              ),
+                              style:
+                                  TTTypography.headline(
+                                    color: TTColors.darkBrown,
+                                  ).copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 30,
+                                  ),
                             ),
                           ],
                         ),
@@ -467,14 +467,14 @@ class _ActivityBottomSheet extends StatelessWidget {
   static const _handle = Color(0xFFB0B0B0);
 
   Color _accentFor(String route) => switch (route) {
-        '/learn' => TTColors.skyBlue,
-        '/play' => TTColors.golden,
-        '/feed' => TTColors.momoCoral,
-        '/chores' => TTColors.bamboo,
-        '/drink' => TTColors.waterDrop,
-        '/wake-up' => TTColors.bedWarm,
-        _ => TTColors.softBrown,
-      };
+    '/learn' => TTColors.skyBlue,
+    '/play' => TTColors.golden,
+    '/feed' => TTColors.momoCoral,
+    '/chores' => TTColors.bamboo,
+    '/drink' => TTColors.waterDrop,
+    '/wake-up' => TTColors.bedWarm,
+    _ => TTColors.softBrown,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -585,8 +585,9 @@ class _SheetNavButton extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (due ? accent : TTColors.darkBrown)
-                        .withValues(alpha: due ? 0.35 : 0.12),
+                    color: (due ? accent : TTColors.darkBrown).withValues(
+                      alpha: due ? 0.35 : 0.12,
+                    ),
                     blurRadius: due ? 10 : 6,
                     offset: const Offset(0, 2),
                   ),
@@ -634,10 +635,7 @@ class _LoopingVideoBackground extends StatelessWidget {
             child: SizedBox(
               width: size.width > 0 ? size.width : 393,
               height: size.height > 0 ? size.height : 852,
-              child: VideoPlayer(
-                key: ValueKey(controller),
-                controller!,
-              ),
+              child: VideoPlayer(key: ValueKey(controller), controller!),
             ),
           ),
         ),
@@ -658,11 +656,7 @@ class _HomeBedroomBg extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            TTColors.peachSoft,
-            TTColors.peachWall,
-            Color(0xFFE8C4A8),
-          ],
+          colors: [TTColors.peachSoft, TTColors.peachWall, Color(0xFFE8C4A8)],
         ),
       ),
       child: CustomPaint(

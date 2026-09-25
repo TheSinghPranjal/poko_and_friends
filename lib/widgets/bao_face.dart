@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/tt_colors.dart';
 
-/// Poko's face — locked Mickey-level consistency.
+/// Bao's face — locked Mickey-level consistency.
 /// Proportions must not change across screens.
 class BaoFace extends StatelessWidget {
   const BaoFace({
@@ -172,7 +172,7 @@ class _BaoFacePainter extends CustomPainter {
       oldDelegate.showCollar != showCollar;
 }
 
-/// Soft pulsing glow ring around Poko's face (splash logo heartbeat).
+/// Soft pulsing glow ring around Bao's face (splash logo heartbeat).
 class BaoGlowRing extends StatefulWidget {
   const BaoGlowRing({
     super.key,

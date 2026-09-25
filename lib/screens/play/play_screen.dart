@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/play_games.dart';
 import '../../services/play_due_store.dart';
 import '../../theme/tt_colors.dart';
@@ -22,22 +23,30 @@ class PlayScreen extends StatefulWidget {
 }
 
 class _PlayScreenState extends State<PlayScreen> {
-  static const _idleVideoAsset = 'assets/videos/play/play_screen_video.mp4';
+  static const _baoIdleVideoAsset = 'assets/videos/play/play_screen_video.mp4';
 
   VideoPlayerController? _idleVideo;
   bool _idleReady = false;
+  bool _videoStarted = false;
   Map<String, int> _dueByGame = {};
   Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_initVideo());
     unawaited(_refresh());
     _refreshTimer = Timer.periodic(
       const Duration(minutes: 1),
       (_) => unawaited(_refresh()),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_videoStarted) return;
+    _videoStarted = true;
+    unawaited(_initVideo());
   }
 
   Future<void> _refresh() async {
@@ -52,7 +61,11 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   Future<void> _initVideo() async {
-    final idle = VideoPlayerController.asset(_idleVideoAsset);
+    final asset = CharacterMedia.clip(
+      CharacterMedia.idOf(context),
+      _baoIdleVideoAsset,
+    );
+    final idle = VideoPlayerController.asset(asset);
     try {
       await idle.initialize();
       if (!mounted) {
@@ -88,7 +101,9 @@ class _PlayScreenState extends State<PlayScreen> {
 
   Future<void> _tapGame(int index) async {
     final game = PlayGames.all[index];
-    await context.push<bool>('/play-game/${game.id}');
+    await context.push<bool>(
+      CharacterMedia.withCharacter(context, '/play-game/${game.id}'),
+    );
     if (!mounted) return;
     await _refresh();
   }
@@ -113,10 +128,7 @@ class _PlayScreenState extends State<PlayScreen> {
               ),
             ),
           ),
-          _PlayVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _PlayVideoLayer(controller: _idleVideo, ready: _idleReady),
           IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -142,8 +154,9 @@ class _PlayScreenState extends State<PlayScreen> {
               const SizedBox(height: 8),
               Text(
                 'Play with Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               const Spacer(),
               ItemTrayBar(
@@ -156,9 +169,8 @@ class _PlayScreenState extends State<PlayScreen> {
                       done: false,
                       badgeCount: _dueByGame[game.id] ?? 0,
                       highlighted: (_dueByGame[game.id] ?? 0) > 0,
-                      onTap: () => unawaited(
-                        _tapGame(PlayGames.all.indexOf(game)),
-                      ),
+                      onTap: () =>
+                          unawaited(_tapGame(PlayGames.all.indexOf(game))),
                     ),
                 ],
               ),
@@ -171,10 +183,7 @@ class _PlayScreenState extends State<PlayScreen> {
 }
 
 class _PlayVideoLayer extends StatelessWidget {
-  const _PlayVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _PlayVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -193,10 +202,7 @@ class _PlayVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
 import '../../services/stars_store.dart';
@@ -82,10 +83,7 @@ class _GetDressedScreenState extends State<GetDressedScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
     unawaited(_loadDue());
   }
@@ -245,12 +243,13 @@ class _GetDressedScreenState extends State<GetDressedScreen>
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted) return;
     await StarsStore.add(reward.stars);
-      await _showReward(reward);
+    await _showReward(reward);
     if (!mounted) return;
     context.pop(true);
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -263,6 +262,7 @@ class _GetDressedScreenState extends State<GetDressedScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -373,7 +373,8 @@ class _GetDressedScreenState extends State<GetDressedScreen>
 
   @override
   Widget build(BuildContext context) {
-    final overlayVisible = _phase == _DressPhase.dressing ||
+    final overlayVisible =
+        _phase == _DressPhase.dressing ||
         _phase == _DressPhase.dressingEnding ||
         _phase == _DressPhase.tying ||
         _phase == _DressPhase.done;
@@ -396,10 +397,7 @@ class _GetDressedScreenState extends State<GetDressedScreen>
               ),
             ),
           ),
-          _DressVideoLayer(
-            controller: _baseController,
-            ready: _baseReady,
-          ),
+          _DressVideoLayer(controller: _baseController, ready: _baseReady),
           if (overlayVisible)
             AnimatedBuilder(
               animation: _crossfade,
@@ -439,8 +437,9 @@ class _GetDressedScreenState extends State<GetDressedScreen>
               const SizedBox(height: 8),
               Text(
                 'Get Dressed!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -448,8 +447,7 @@ class _GetDressedScreenState extends State<GetDressedScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob =
-                            math.sin(_float.value * math.pi * 2) * 10;
+                        final bob = math.sin(_float.value * math.pi * 2) * 10;
                         final centerX =
                             constraints.maxWidth / 2 - _bubbleSize / 2;
                         final leftX =
@@ -478,10 +476,12 @@ class _GetDressedScreenState extends State<GetDressedScreen>
                                   cream: TTColors.dressCream,
                                   warm: TTColors.dressWarm,
                                   done: _dressCompleted,
-                                  playing: _phase == _DressPhase.dressing ||
+                                  playing:
+                                      _phase == _DressPhase.dressing ||
                                       _phase == _DressPhase.dressingEnding,
                                   highlighted:
-                                      _dueCount > 0 && _phase == _DressPhase.idle,
+                                      _dueCount > 0 &&
+                                      _phase == _DressPhase.idle,
                                   badgeCount: _phase == _DressPhase.idle
                                       ? _dueCount
                                       : 0,
@@ -495,8 +495,8 @@ class _GetDressedScreenState extends State<GetDressedScreen>
                                 child: BounceButton(
                                   onPressed:
                                       _phase == _DressPhase.waitTie && !_busy
-                                          ? _tapTie
-                                          : null,
+                                      ? _tapTie
+                                      : null,
                                   enabled:
                                       _phase == _DressPhase.waitTie && !_busy,
                                   semanticLabel: 'Tie',
@@ -527,10 +527,7 @@ class _GetDressedScreenState extends State<GetDressedScreen>
 }
 
 class _DressVideoLayer extends StatelessWidget {
-  const _DressVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _DressVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -549,10 +546,7 @@ class _DressVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );

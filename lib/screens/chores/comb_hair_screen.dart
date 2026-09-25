@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
 import '../../services/stars_store.dart';
@@ -56,10 +57,7 @@ class _CombHairScreenState extends State<CombHairScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
     unawaited(_loadDue());
   }
@@ -205,6 +203,7 @@ class _CombHairScreenState extends State<CombHairScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -217,6 +216,7 @@ class _CombHairScreenState extends State<CombHairScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -230,7 +230,6 @@ class _CombHairScreenState extends State<CombHairScreen>
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -291,8 +290,9 @@ class _CombHairScreenState extends State<CombHairScreen>
               const SizedBox(height: 8),
               Text(
                 'Comb hair',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -300,8 +300,7 @@ class _CombHairScreenState extends State<CombHairScreen>
                   builder: (context, _) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
-                        final bob =
-                            math.sin(_float.value * math.pi * 2) * 12;
+                        final bob = math.sin(_float.value * math.pi * 2) * 12;
                         final x = constraints.maxWidth / 2 - _bubbleSize / 2;
                         final due = _dueCount > 0;
                         return Stack(
@@ -339,10 +338,7 @@ class _CombHairScreenState extends State<CombHairScreen>
 }
 
 class _CombVideoLayer extends StatelessWidget {
-  const _CombVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _CombVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -361,10 +357,7 @@ class _CombVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );
@@ -429,8 +422,9 @@ class CombBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: TTColors.combWarm
-                        .withValues(alpha: highlighted ? 0.5 : 0.28),
+                    color: TTColors.combWarm.withValues(
+                      alpha: highlighted ? 0.5 : 0.28,
+                    ),
                     blurRadius: highlighted ? 18 : 14,
                     offset: const Offset(0, 6),
                   ),
