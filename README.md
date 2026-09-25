@@ -2,7 +2,7 @@
 
 Tiny Think – Poko & Friends by Klay Kandy. A sibling of [bao_and_friends](https://github.com/TheSinghPranjal/bao_and_friends) with the same screens, stores, and activity video state machines.
 
-Poko (Bao’s little sister, ages 0–2) is the unlocked playable lead. Bao, Po, Koko, Momo, and Dodo stay on the family carousel as coming soon. Activity clips, bedroom backgrounds, and images are still the shared `bao_*` files until Poko-specific media exists.
+Poko (Bao’s little sister, ages 0–2) is the unlocked playable lead. Bao, Po, Koko, Momo, and Dodo stay on the family carousel as coming soon. Poko's screens play her own clips where a matching slot exists (`lib/models/character_media.dart`). Bao's files stay registered and still play for Bao, and they remain the fallback on any Poko slot that does not have a clip yet.
 
 ## Run locally
 

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
@@ -50,10 +51,7 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
   }
 
@@ -80,8 +78,8 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
         if (v == null || !_biteInProgress || !v.value.isInitialized) return;
         final duration = v.value.duration;
         if (duration <= Duration.zero) return;
-        final nearEnd = v.value.position >=
-            duration - const Duration(milliseconds: 80);
+        final nearEnd =
+            v.value.position >= duration - const Duration(milliseconds: 80);
         if (nearEnd && !v.value.isPlaying) {
           unawaited(_finishBite());
         }
@@ -171,6 +169,7 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -183,6 +182,7 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -219,10 +219,7 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
               ),
             ),
           ),
-          _SandwichVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _SandwichVideoLayer(controller: _idleVideo, ready: _idleReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -261,8 +258,9 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
               const SizedBox(height: 8),
               Text(
                 'Sandwich with Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -271,39 +269,47 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Stack(
-                          children: List.generate(EatSandwichRules.maxSandwiches,
-                              (i) {
-                            final angle =
-                                (i / EatSandwichRules.maxSandwiches) *
-                                        math.pi *
-                                        1.2 -
-                                    0.3;
-                            final bob = math.sin(
-                                    (_float.value + i * 0.25) * math.pi * 2) *
-                                10;
-                            final x = constraints.maxWidth * 0.5 +
-                                math.cos(angle) * constraints.maxWidth * 0.32 -
-                                (bubbleSize / 2);
-                            final y = constraints.maxHeight * 0.12 +
-                                math.sin(angle) * 50 +
-                                bob;
-                            final done = _eaten.contains(i);
-                            return Positioned(
-                              left: x,
-                              top: y,
-                              child: BounceButton(
-                                onPressed: done || _biteInProgress
-                                    ? null
-                                    : () => _tapBubble(i),
-                                enabled: !done && !_biteInProgress,
-                                semanticLabel: 'Sandwich bubble ${i + 1}',
-                                child: SandwichBubble(
-                                  eaten: done,
-                                  playing: done && _biteInProgress,
+                          children: List.generate(
+                            EatSandwichRules.maxSandwiches,
+                            (i) {
+                              final angle =
+                                  (i / EatSandwichRules.maxSandwiches) *
+                                      math.pi *
+                                      1.2 -
+                                  0.3;
+                              final bob =
+                                  math.sin(
+                                    (_float.value + i * 0.25) * math.pi * 2,
+                                  ) *
+                                  10;
+                              final x =
+                                  constraints.maxWidth * 0.5 +
+                                  math.cos(angle) *
+                                      constraints.maxWidth *
+                                      0.32 -
+                                  (bubbleSize / 2);
+                              final y =
+                                  constraints.maxHeight * 0.12 +
+                                  math.sin(angle) * 50 +
+                                  bob;
+                              final done = _eaten.contains(i);
+                              return Positioned(
+                                left: x,
+                                top: y,
+                                child: BounceButton(
+                                  onPressed: done || _biteInProgress
+                                      ? null
+                                      : () => _tapBubble(i),
+                                  enabled: !done && !_biteInProgress,
+                                  semanticLabel: 'Sandwich bubble ${i + 1}',
+                                  child: SandwichBubble(
+                                    eaten: done,
+                                    playing: done && _biteInProgress,
+                                  ),
                                 ),
-                              ),
-                            );
-                          }),
+                              );
+                            },
+                          ),
                         );
                       },
                     );
@@ -319,10 +325,7 @@ class _EatSandwichScreenState extends State<EatSandwichScreen>
 }
 
 class _SandwichVideoLayer extends StatelessWidget {
-  const _SandwichVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _SandwichVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -341,10 +344,7 @@ class _SandwichVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );

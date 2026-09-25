@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'character.dart';
+import 'character_media.dart';
+
 /// One food under the Feed activity screen.
 class FeedFoodSpec {
   const FeedFoodSpec({
@@ -27,10 +30,8 @@ abstract final class FeedFoods {
       label: 'Milk',
       icon: Icons.local_drink_rounded,
       accent: Color(0xFFF5F5F5),
-      idleVideoAsset:
-          'assets/videos/feed/milk/bao_not_drinking_milk_video.mp4',
-      actionVideoAsset:
-          'assets/videos/feed/milk/bao_drinking_milk_video.mp4',
+      idleVideoAsset: 'assets/videos/feed/milk/bao_not_drinking_milk_video.mp4',
+      actionVideoAsset: 'assets/videos/feed/milk/bao_drinking_milk_video.mp4',
     ),
     FeedFoodSpec(
       id: 'apple',
@@ -69,8 +70,7 @@ abstract final class FeedFoods {
       label: 'Sandwich',
       icon: Icons.lunch_dining_rounded,
       accent: Color(0xFFE6B87A),
-      idleVideoAsset:
-          'assets/videos/feed/sandwich/bao_not_eating_sandwich.mp4',
+      idleVideoAsset: 'assets/videos/feed/sandwich/bao_not_eating_sandwich.mp4',
       actionVideoAsset: 'assets/videos/feed/sandwich/bao_eating_sandwich.mp4',
     ),
   ];
@@ -80,5 +80,18 @@ abstract final class FeedFoods {
       if (f.id == id) return f;
     }
     return null;
+  }
+
+  /// Same food, with Poko idle/action clips where a match exists.
+  static FeedFoodSpec resolve(String id, CharacterId character) {
+    final food = byId(id) ?? all.first;
+    return FeedFoodSpec(
+      id: food.id,
+      label: food.label,
+      icon: food.icon,
+      accent: food.accent,
+      idleVideoAsset: CharacterMedia.clip(character, food.idleVideoAsset),
+      actionVideoAsset: CharacterMedia.clip(character, food.actionVideoAsset),
+    );
   }
 }

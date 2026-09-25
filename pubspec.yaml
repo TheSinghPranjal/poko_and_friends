@@ -149,6 +149,32 @@ flutter:
     - assets/videos/play/skipping/bao_not_doing_skipping_video.mp4
     - assets/videos/play/skipping/bao_doing_skipping_video.mp4
     - assets/videos/bao_not_feeding.mp4
+    - assets/videos/poko_character_screen_bg_video_list/poko_character_screen_bg_video.mp4
+    - assets/videos/poko_character_screen_bg_video_list/poko_character_screen_night_yawning_bg_video.mp4
+    - assets/videos/poko_character_screen_bg_video_list/poko_character_screen_morning_bg_video.mp4
+    - assets/videos/poko_character_screen_bg_video_list/poko_character_screen_noon_bg_video.mp4
+    - assets/videos/poko_character_screen_bg_video_list/poko_character_screen_evening_bg_video.mp4
+    - assets/videos/poko_character_screen_bg_video_list/poko_character_screen_bg_eating_apple_video.mp4
+    - assets/videos/wake/poko_sleeping_video.mp4
+    - assets/videos/poko_not_feeding.mp4
+    - assets/videos/feed/apple/poko_not_eating_apple.mp4
+    - assets/videos/feed/apple/poko_eating_apple.mp4
+    - assets/videos/feed/veggies/poko_not_eating_veggies.mp4
+    - assets/videos/feed/veggies/poko_eating_veggies.mp4
+    - assets/videos/feed/rice/poko_not_eating_rice.mp4
+    - assets/videos/feed/rice/poko_eating_rice.mp4
+    - assets/videos/play/poko_play_screen_video.mp4
+    - assets/videos/play/football/poko_not_playing_football_video.mp4
+    - assets/videos/play/football/poko_playing_football_video.mp4
+    - assets/videos/play/cricket/poko_not_playing_cricket_video.mp4
+    - assets/videos/play/cricket/poko_playing_cricket_video.mp4
+    - assets/videos/play/badminton/poko_not_playing_badminton_video.mp4
+    - assets/videos/play/badminton/poko_playing_badminton_video.mp4
+    - assets/videos/play/dance/poko_not_doing_dance_video.mp4
+    - assets/videos/play/dance/poko_doing_dance_video.mp4
+    - assets/videos/play/skipping/poko_not_doing_skipping_video.mp4
+    - assets/videos/play/skipping/poko_doing_skipping_video.mp4
+    - assets/videos/reward/poko_celebration_loop.mp4
     - assets/images/logo_splash_screen.png
     - assets/images/character_select_bg.png
     - assets/images/bao_reward_celebrate.png

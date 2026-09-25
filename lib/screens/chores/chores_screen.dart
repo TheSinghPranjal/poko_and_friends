@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
 import '../../models/character_bg_videos.dart';
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/schedule_store.dart';
 import '../../services/stars_store.dart';
@@ -34,8 +35,10 @@ class _ChoreItem {
 }
 
 class _ChoresScreenState extends State<ChoresScreen> {
-  // Temporary idle clip until a dedicated chores bedroom video is added.
-  static const _idleVideoAsset = CharacterBgVideos.fallback;
+  // Generic idle until a dedicated chores clip exists. Poko uses her idle.
+  static const _baoIdleVideoAsset = CharacterBgVideos.fallback;
+
+  bool _videoStarted = false;
 
   static const _chores = <_ChoreItem>[
     _ChoreItem('Make Bed', Icons.bed_rounded, Color(0xFFB39DDB)),
@@ -70,8 +73,15 @@ class _ChoresScreenState extends State<ChoresScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_initVideo());
     unawaited(_refreshDues());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_videoStarted) return;
+    _videoStarted = true;
+    unawaited(_initVideo());
   }
 
   Future<void> _refreshDues() async {
@@ -87,7 +97,11 @@ class _ChoresScreenState extends State<ChoresScreen> {
   }
 
   Future<void> _initVideo() async {
-    final idle = VideoPlayerController.asset(_idleVideoAsset);
+    final asset = CharacterMedia.clip(
+      CharacterMedia.idOf(context),
+      _baoIdleVideoAsset,
+    );
+    final idle = VideoPlayerController.asset(asset);
     try {
       await idle.initialize();
       if (!mounted) {
@@ -117,35 +131,45 @@ class _ChoresScreenState extends State<ChoresScreen> {
     // Allow anytime — due-count chores can be reopened for more dues / bonus taps.
 
     if (index == 0) {
-      final completed = await context.push<bool>('/make-bed');
+      final completed = await context.push<bool>(
+        CharacterMedia.withCharacter(context, '/make-bed'),
+      );
       if (!mounted || completed != true) {
         await _refreshDues();
         return;
       }
       setState(() => _done.add(index));
     } else if (index == 1) {
-      final completed = await context.push<bool>('/brush-teeth');
+      final completed = await context.push<bool>(
+        CharacterMedia.withCharacter(context, '/brush-teeth'),
+      );
       if (!mounted || completed != true) {
         await _refreshDues();
         return;
       }
       setState(() => _done.add(index));
     } else if (index == 2) {
-      final completed = await context.push<bool>('/wash-face');
+      final completed = await context.push<bool>(
+        CharacterMedia.withCharacter(context, '/wash-face'),
+      );
       if (!mounted || completed != true) {
         await _refreshDues();
         return;
       }
       setState(() => _done.add(index));
     } else if (index == 3) {
-      final completed = await context.push<bool>('/bath');
+      final completed = await context.push<bool>(
+        CharacterMedia.withCharacter(context, '/bath'),
+      );
       if (!mounted || completed != true) {
         await _refreshDues();
         return;
       }
       setState(() => _done.add(index));
     } else if (index == 4) {
-      final completed = await context.push<bool>('/comb-hair');
+      final completed = await context.push<bool>(
+        CharacterMedia.withCharacter(context, '/comb-hair'),
+      );
       if (!mounted || completed != true) {
         await _refreshDues();
         return;
@@ -153,13 +177,17 @@ class _ChoresScreenState extends State<ChoresScreen> {
       setState(() => _done.add(index));
     } else if (index == 5) {
       if (_done.contains(index)) return;
-      final completed = await context.push<bool>('/get-dressed');
+      final completed = await context.push<bool>(
+        CharacterMedia.withCharacter(context, '/get-dressed'),
+      );
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
       await ScheduleStore.markCompleted(ActivityId.getDressed);
     } else if (index == 6) {
       if (_done.contains(index)) return;
-      final completed = await context.push<bool>('/wear-shoes');
+      final completed = await context.push<bool>(
+        CharacterMedia.withCharacter(context, '/wear-shoes'),
+      );
       if (!mounted || completed != true) return;
       setState(() => _done.add(index));
       await ScheduleStore.markCompleted(ActivityId.wearShoes);
@@ -183,6 +211,7 @@ class _ChoresScreenState extends State<ChoresScreen> {
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -195,6 +224,7 @@ class _ChoresScreenState extends State<ChoresScreen> {
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -229,10 +259,7 @@ class _ChoresScreenState extends State<ChoresScreen> {
               ),
             ),
           ),
-          _ChoresVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _ChoresVideoLayer(controller: _idleVideo, ready: _idleReady),
           IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -258,8 +285,9 @@ class _ChoresScreenState extends State<ChoresScreen> {
               const SizedBox(height: 8),
               Text(
                 'Help Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               const Spacer(),
               ItemTrayBar(
@@ -286,10 +314,7 @@ class _ChoresScreenState extends State<ChoresScreen> {
 }
 
 class _ChoresVideoLayer extends StatelessWidget {
-  const _ChoresVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _ChoresVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
