@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
@@ -50,10 +51,7 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
   }
 
@@ -80,8 +78,8 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
         if (v == null || !_sipInProgress || !v.value.isInitialized) return;
         final duration = v.value.duration;
         if (duration <= Duration.zero) return;
-        final nearEnd = v.value.position >=
-            duration - const Duration(milliseconds: 80);
+        final nearEnd =
+            v.value.position >= duration - const Duration(milliseconds: 80);
         if (nearEnd && !v.value.isPlaying) {
           unawaited(_finishSip());
         }
@@ -172,6 +170,7 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -184,6 +183,7 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -220,10 +220,7 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
               ),
             ),
           ),
-          _MilkVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _MilkVideoLayer(controller: _idleVideo, ready: _idleReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -263,8 +260,9 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
               const SizedBox(height: 8),
               Text(
                 'Milk with Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -273,19 +271,25 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Stack(
-                          children: List.generate(DrinkMilkRules.maxGlasses,
-                              (i) {
-                            final angle = (i / DrinkMilkRules.maxGlasses) *
+                          children: List.generate(DrinkMilkRules.maxGlasses, (
+                            i,
+                          ) {
+                            final angle =
+                                (i / DrinkMilkRules.maxGlasses) *
                                     math.pi *
                                     1.2 -
                                 0.3;
-                            final bob = math.sin(
-                                    (_float.value + i * 0.25) * math.pi * 2) *
+                            final bob =
+                                math.sin(
+                                  (_float.value + i * 0.25) * math.pi * 2,
+                                ) *
                                 10;
-                            final x = constraints.maxWidth * 0.5 +
+                            final x =
+                                constraints.maxWidth * 0.5 +
                                 math.cos(angle) * constraints.maxWidth * 0.32 -
                                 (bubbleSize / 2);
-                            final y = constraints.maxHeight * 0.12 +
+                            final y =
+                                constraints.maxHeight * 0.12 +
                                 math.sin(angle) * 50 +
                                 bob;
                             final done = _drunk.contains(i);
@@ -320,10 +324,7 @@ class _DrinkMilkScreenState extends State<DrinkMilkScreen>
 }
 
 class _MilkVideoLayer extends StatelessWidget {
-  const _MilkVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _MilkVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;

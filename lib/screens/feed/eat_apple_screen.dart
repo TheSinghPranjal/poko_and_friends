@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/rewards.dart';
 import '../../services/stars_store.dart';
 import '../../theme/tt_colors.dart';
@@ -50,10 +51,7 @@ class _EatAppleScreenState extends State<EatAppleScreen>
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
-    _crossfade = AnimationController(
-      vsync: this,
-      duration: _crossfadeDuration,
-    );
+    _crossfade = AnimationController(vsync: this, duration: _crossfadeDuration);
     unawaited(_initVideos());
   }
 
@@ -80,8 +78,8 @@ class _EatAppleScreenState extends State<EatAppleScreen>
         if (v == null || !_biteInProgress || !v.value.isInitialized) return;
         final duration = v.value.duration;
         if (duration <= Duration.zero) return;
-        final nearEnd = v.value.position >=
-            duration - const Duration(milliseconds: 80);
+        final nearEnd =
+            v.value.position >= duration - const Duration(milliseconds: 80);
         if (nearEnd && !v.value.isPlaying) {
           unawaited(_finishBite());
         }
@@ -172,6 +170,7 @@ class _EatAppleScreenState extends State<EatAppleScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -184,6 +183,7 @@ class _EatAppleScreenState extends State<EatAppleScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -220,10 +220,7 @@ class _EatAppleScreenState extends State<EatAppleScreen>
               ),
             ),
           ),
-          _AppleVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _AppleVideoLayer(controller: _idleVideo, ready: _idleReady),
           AnimatedBuilder(
             animation: _crossfade,
             builder: (context, child) {
@@ -263,8 +260,9 @@ class _EatAppleScreenState extends State<EatAppleScreen>
               const SizedBox(height: 8),
               Text(
                 'Apple with Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -273,19 +271,21 @@ class _EatAppleScreenState extends State<EatAppleScreen>
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Stack(
-                          children: List.generate(EatAppleRules.maxApples,
-                              (i) {
-                            final angle = (i / EatAppleRules.maxApples) *
-                                    math.pi *
-                                    1.2 -
+                          children: List.generate(EatAppleRules.maxApples, (i) {
+                            final angle =
+                                (i / EatAppleRules.maxApples) * math.pi * 1.2 -
                                 0.3;
-                            final bob = math.sin(
-                                    (_float.value + i * 0.25) * math.pi * 2) *
+                            final bob =
+                                math.sin(
+                                  (_float.value + i * 0.25) * math.pi * 2,
+                                ) *
                                 10;
-                            final x = constraints.maxWidth * 0.5 +
+                            final x =
+                                constraints.maxWidth * 0.5 +
                                 math.cos(angle) * constraints.maxWidth * 0.32 -
                                 (bubbleSize / 2);
-                            final y = constraints.maxHeight * 0.12 +
+                            final y =
+                                constraints.maxHeight * 0.12 +
                                 math.sin(angle) * 50 +
                                 bob;
                             final done = _eaten.contains(i);
@@ -320,10 +320,7 @@ class _EatAppleScreenState extends State<EatAppleScreen>
 }
 
 class _AppleVideoLayer extends StatelessWidget {
-  const _AppleVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _AppleVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -502,11 +499,7 @@ class EatAppleReminderPopup extends StatelessWidget {
               shape: BoxShape.circle,
               color: TTColors.appleSoft,
             ),
-            child: const Icon(
-              Icons.apple,
-              size: 44,
-              color: TTColors.appleDeep,
-            ),
+            child: const Icon(Icons.apple, size: 44, color: TTColors.appleDeep),
           ),
           const SizedBox(height: 12),
           Text('Time for an apple!', style: TTTypography.title()),

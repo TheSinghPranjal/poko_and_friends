@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../models/character_media.dart';
 import '../../models/learn_topics.dart';
 import '../../models/rewards.dart';
 import '../../services/stars_store.dart';
@@ -20,7 +21,6 @@ import '../drink/drink_water_screen.dart' show RewardPopup;
 class AlphabetScreen extends StatefulWidget {
   const AlphabetScreen({super.key});
 
-
   @override
   State<AlphabetScreen> createState() => _AlphabetScreenState();
 }
@@ -32,7 +32,6 @@ class _AlphabetScreenState extends State<AlphabetScreen>
   bool _celebrating = false;
   bool _advancing = false;
   bool _disposed = false;
-
 
   VideoPlayerController? _video;
   bool _ready = false;
@@ -48,9 +47,6 @@ class _AlphabetScreenState extends State<AlphabetScreen>
     unawaited(_loadSegment(0));
   }
 
-
-
-
   Future<void> _disposeController(VideoPlayerController? controller) async {
     if (controller == null) return;
     try {
@@ -58,8 +54,6 @@ class _AlphabetScreenState extends State<AlphabetScreen>
     } catch (_) {}
     await controller.dispose();
   }
-
-
 
   Future<void> _loadSegment(int index) async {
     final prev = _video;
@@ -160,6 +154,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
   }
 
   Future<void> _showReward(RewardResult reward) {
+    final character = CharacterMedia.idOf(context);
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -172,6 +167,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
             color: Colors.transparent,
             child: RewardPopup(
               reward: reward,
+              character: character,
               onContinue: () => Navigator.of(context).pop(),
             ),
           ),
@@ -251,8 +247,9 @@ class _AlphabetScreenState extends State<AlphabetScreen>
               const SizedBox(height: 8),
               Text(
                 'Alphabet!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               Expanded(
                 child: AnimatedBuilder(
@@ -288,10 +285,7 @@ class _AlphabetScreenState extends State<AlphabetScreen>
 }
 
 class _AlphabetVideoLayer extends StatelessWidget {
-  const _AlphabetVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _AlphabetVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
@@ -310,10 +304,7 @@ class _AlphabetVideoLayer extends StatelessWidget {
         child: SizedBox(
           width: size.width > 0 ? size.width : 393,
           height: size.height > 0 ? size.height : 852,
-          child: VideoPlayer(
-            key: ValueKey(controller),
-            controller!,
-          ),
+          child: VideoPlayer(key: ValueKey(controller), controller!),
         ),
       ),
     );
@@ -321,10 +312,7 @@ class _AlphabetVideoLayer extends StatelessWidget {
 }
 
 class _AlphabetNextBubble extends StatelessWidget {
-  const _AlphabetNextBubble({
-    required this.label,
-    this.playing = false,
-  });
+  const _AlphabetNextBubble({required this.label, this.playing = false});
 
   final String label;
   final bool playing;

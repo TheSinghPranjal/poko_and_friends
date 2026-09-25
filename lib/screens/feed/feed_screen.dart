@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../models/activity_schedule.dart';
+import '../../models/character_media.dart';
 import '../../models/feed_foods.dart';
 import '../../services/feed_due_store.dart';
 import '../../services/schedule_store.dart';
@@ -23,22 +24,30 @@ class FeedScreen extends StatefulWidget {
 }
 
 class _FeedScreenState extends State<FeedScreen> {
-  static const _idleVideoAsset = 'assets/videos/bao_not_feeding.mp4';
+  static const _baoIdleVideoAsset = 'assets/videos/bao_not_feeding.mp4';
 
   VideoPlayerController? _idleVideo;
   bool _idleReady = false;
+  bool _videoStarted = false;
   Map<String, int> _dueByFood = {};
   Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_initVideo());
     unawaited(_refresh());
     _refreshTimer = Timer.periodic(
       const Duration(minutes: 1),
       (_) => unawaited(_refresh()),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_videoStarted) return;
+    _videoStarted = true;
+    unawaited(_initVideo());
   }
 
   Future<void> _refresh() async {
@@ -51,7 +60,11 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _initVideo() async {
-    final idle = VideoPlayerController.asset(_idleVideoAsset);
+    final asset = CharacterMedia.clip(
+      CharacterMedia.idOf(context),
+      _baoIdleVideoAsset,
+    );
+    final idle = VideoPlayerController.asset(asset);
     try {
       await idle.initialize();
       if (!mounted) {
@@ -86,7 +99,9 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _tapFood(FeedFoodSpec food) async {
-    final completed = await context.push<bool>('/eat-food/${food.id}');
+    final completed = await context.push<bool>(
+      CharacterMedia.withCharacter(context, '/eat-food/${food.id}'),
+    );
     if (!mounted) return;
     if (completed == true) {
       await ScheduleStore.markCompleted(ActivityId.feed);
@@ -114,10 +129,7 @@ class _FeedScreenState extends State<FeedScreen> {
               ),
             ),
           ),
-          _FeedVideoLayer(
-            controller: _idleVideo,
-            ready: _idleReady,
-          ),
+          _FeedVideoLayer(controller: _idleVideo, ready: _idleReady),
           IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -143,8 +155,9 @@ class _FeedScreenState extends State<FeedScreen> {
               const SizedBox(height: 8),
               Text(
                 'Feed Poko!',
-                style: TTTypography.headline(color: TTColors.darkBrown)
-                    .copyWith(fontWeight: FontWeight.w900, fontSize: 30),
+                style: TTTypography.headline(
+                  color: TTColors.darkBrown,
+                ).copyWith(fontWeight: FontWeight.w900, fontSize: 30),
               ),
               const Spacer(),
               ItemTrayBar(
@@ -170,10 +183,7 @@ class _FeedScreenState extends State<FeedScreen> {
 }
 
 class _FeedVideoLayer extends StatelessWidget {
-  const _FeedVideoLayer({
-    required this.controller,
-    required this.ready,
-  });
+  const _FeedVideoLayer({required this.controller, required this.ready});
 
   final VideoPlayerController? controller;
   final bool ready;
