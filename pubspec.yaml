@@ -60,14 +60,21 @@ flutter_launcher_icons:
   ios: true
   web:
     generate: true
+    # flutter_launcher_icons writes maskable PNGs full-bleed. After generating,
+    # Icon-maskable-*.png are inset 16% on #FD89B1 so Poko stays in the safe zone.
   macos:
     generate: true
   windows:
     generate: true
-  image_path: assets/images/app_icon.png
-  adaptive_icon_background: "#7EC8E8"
-  adaptive_icon_foreground: assets/images/app_icon.png
+  image_path: assets/icon/poko_app_icon.png
+  # Sampled from the pink edge of the Poko gradient (median of the outer frame).
+  adaptive_icon_background: "#FD89B1"
+  adaptive_icon_foreground: assets/icon/poko_app_icon.png
+  # Full-bleed artwork. 22% inset keeps Poko's face, ears, and paws inside
+  # Android's 66dp adaptive-icon safe zone so the circular mask does not crop them.
+  adaptive_icon_foreground_inset: 22
   remove_alpha_ios: true
+  background_color_ios: "#FD89B1"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
